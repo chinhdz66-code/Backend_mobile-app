@@ -17,6 +17,12 @@ app.get('/', (req, res) => {
     res.send('Backend API Đặt Vé Phim!');
 });
 
+// Nạp bản đồ phân luồng của khu vực Users
+const userRoutes = require('./routes/userRoutes');
+
+// Định tuyến tổng: Mọi luồng đi vào /api/users đều phải chạy qua userRoutes
+app.use('/api/users', userRoutes);
+
 // Cho sever chạy và bắt đầu lắng nghe các request từ client
 app.listen(PORT, () => {
     console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
