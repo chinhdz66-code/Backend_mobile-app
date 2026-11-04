@@ -1,7 +1,10 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 
 const app = express();
+
+app.use(cors());
 
 // Thiết lập Json cho sever đọc 
 app.use(express.json());
@@ -14,7 +17,7 @@ const PORT = process.env.PORT || 8080;
 
 // API test
 app.get('/', (req, res) => {
-    res.send('Backend API Đặt Vé Phim!');
+    res.send('Backend API Đặt Vé Phim! - đã có CI/CD');
 });
 
 // Nạp bản đồ phân luồng của khu vực Users
