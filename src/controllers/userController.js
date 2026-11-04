@@ -50,4 +50,30 @@ const taoUser = async (req, res) => {
     }
 };
 
-module.exports = { layDanhSachUser, taoUser };
+//đăng nhập user
+const dangNhap = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Vui lòng nhập email và mật khẩu!" });
+        }
+
+        // Gọi Bếp trưởng xử lý
+        const ketQua = await userService.dangNhapUser(email, password);
+
+        res.status(200).json({
+            trangThai: "Thành công",
+            thongBao: "Đăng nhập thành công!",
+            token: ketQua.token,
+            duLieu: ketQua.user
+        });
+    } catch (error) {
+        if (error.message === "Email hoặc mật khẩu không chính xác") {
+            return res.status(401).json({ trangThai: "Thất bại", thongBao: error.message });
+        }
+        res.status(500).json({ trangThai: "Thất bại", chiTiet: error.message });
+    }
+};
+
+module.exports = { layDanhSachUser, taoUser, dangNhap };

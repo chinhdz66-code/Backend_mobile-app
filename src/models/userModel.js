@@ -21,4 +21,12 @@ const taoUserMoi = async (fullName, email, matKhauDaHash, phone, gender, dob) =>
     return result.insertId; 
 };
 
-module.exports = { layTatCaUser, taoUserMoi };
+//hàm đăng nhập
+const timUserBangEmail = async (email) => {
+    const sql = `SELECT * FROM Users WHERE email = ?`;
+    const [rows] = await pool.query(sql, [email]);
+    return rows.length > 0 ? rows[0] : null; 
+};
+
+
+module.exports = { layTatCaUser, taoUserMoi, timUserBangEmail };
