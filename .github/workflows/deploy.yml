@@ -1,0 +1,17 @@
+name: Deploy Node.js API
+
+on:
+  push:
+    branches:
+      - main # Kích hoạt khi có code mới đẩy lên nhánh main
+
+jobs:
+  deploy:
+    runs-on: self-hosted 
+    steps:
+      - name: Cap nhat code va Khoi dong lai Server
+        run: |
+          cd ~/Backend_mobile-app
+          git pull origin main
+          npm install
+          pm2 restart movie-api
