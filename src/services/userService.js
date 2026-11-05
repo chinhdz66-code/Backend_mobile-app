@@ -30,14 +30,17 @@ const dangNhapUser = async (email, matKhauNhapVao) => {
         throw new Error("Email hoặc mật khẩu không chính xác");
     }
 
-    // 3. In thẻ Token
+    // 3. In thẻ Token (sử dụng JWT_SECRET từ .env hoặc fallback nếu chưa nhận)
     const payload = { 
         user_id: user.user_id, 
         role: user.role 
     };
     
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { 
-        expiresIn: process.env.JWT_EXPIRES_IN 
+    const secretKey = process.env.JWT_SECRET || 'cqs_cinema_secret_key_2026';
+    const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+
+    const token = jwt.sign(payload, secretKey, {
+        expiresIn: expiresIn
     });
 
     // Xóa mật khẩu trước khi trả về

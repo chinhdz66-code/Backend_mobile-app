@@ -76,4 +76,47 @@ const dangNhap = async (req, res) => {
     }
 };
 
-module.exports = { layDanhSachUser, taoUser, dangNhap };
+// xử lí avatar của User
+const uploadAvatar = async (req, res) => {
+    try {
+        const { user_id } = req.body;
+        if (!req.file) {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Vui lòng chọn file ảnh!" });
+        }
+
+        // Tạo URL ảnh công khai dạng: http://<IP>:8080/uploads/avatars/filename.jpg
+        const avatarUrl = `${req.protocol}://${req.get('host')}/uploads/avatars/${req.file.filename}`;
+
+        // Gọi model cập nhật vào MySQL
+        await userModel.capNhatAvatar(user_id, avatarUrl);
+
+        return res.status(200).json({
+            trangThai: "Thành công",
+            thongBao: "Cập nhật ảnh đại diện thành công!",
+            avatar_url: avatarUrl
+        });
+    } catch (error) {
+        return res.status(500).json({ trangThai: "Thất bại", thongBao: error.message });
+    }
+};
+
+// cập nhật thông tin profile
+const capNhatThongTin = async (req, res) => {
+    try {
+        const { user_id, full_name, phone, gender, dob } = req.body;
+        if (!user_id || !full_name) {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Thiếu thông tin!" });
+        }
+
+        await userModel.capNhatThongTinUser(user_id, full_name, phone, gender, dob);
+
+        return res.status(200).json({
+            trangThai: "Thành công",
+            thongBao: "Cập nhật thông tin thành công!"
+        });
+    } catch (error) {
+        return res.status(500).json({ trangThai: "Thất bại", thongBao: error.message });
+    }
+};
+
+module.exports = { layDanhSachUser, taoUser, dangNhap, uploadAvatar, capNhatThongTin };

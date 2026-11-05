@@ -28,5 +28,19 @@ const timUserBangEmail = async (email) => {
     return rows.length > 0 ? rows[0] : null; 
 };
 
+// cập nhật avatar
+const capNhatAvatar = async (userId, avatarUrl) => {
+    const sql = 'UPDATE Users SET avatar_url = ? WHERE user_id = ?';
+    const [result] = await pool.query(sql, [avatarUrl, userId]);
+    return result.affectedRows > 0;
+};
 
-module.exports = { layTatCaUser, taoUserMoi, timUserBangEmail };
+// cập nhật thông tin user
+const capNhatThongTinUser = async (userId, fullName, phone, gender, dob) => {
+    const sql = 'UPDATE Users SET full_name = ?, phone = ?, gender = ?, dob = ? WHERE user_id = ?';
+    const [result] = await pool.query(sql, [fullName, phone, gender, dob, userId]);
+    return result.affectedRows > 0;
+};
+
+
+module.exports = { layTatCaUser, taoUserMoi, timUserBangEmail, capNhatAvatar, capNhatThongTinUser };
