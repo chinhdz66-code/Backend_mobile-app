@@ -29,4 +29,5 @@ router.post('/update-profile', userController.capNhatThongTin);
 router.get('/', authMiddleware.xacThucToken, authMiddleware.kiemTraAdmin, userController.layDanhSachUser);
 router.post('/', userController.taoUser);
 router.post('/login', userController.dangNhap);
+router.post('/change-password', userController.doiMatKhau);
 module.exports = router;

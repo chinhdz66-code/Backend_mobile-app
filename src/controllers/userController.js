@@ -119,4 +119,43 @@ const capNhatThongTin = async (req, res) => {
     }
 };
 
-module.exports = { layDanhSachUser, taoUser, dangNhap, uploadAvatar, capNhatThongTin };
+// thay đổi mật khẩu 
+const doiMatKhau = async (req, res) => {
+    try {
+        // Lấy userId ưu tiên từ Middleware Token, sau đó mới tới body
+        const userId = req.user?.user_id || req.body.userId || req.body.user_id;
+        const oldPassword = req.body.oldPassword || req.body.old_password;
+        const newPassword = req.body.newPassword || req.body.new_password;
+
+        if (!userId || !oldPassword || !newPassword) {
+            return res.status(400).json({
+                trangThai: "Thất bại",
+                thongBao: "Vui lòng nhập đầy đủ thông tin mật khẩu!"
+            });
+        }
+
+        // Regex: Tối thiểu 8 ký tự, 1 chữ hoa, 1 chữ số, 1 ký tự đặc biệt
+        const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!passwordRegex.test(newPassword)) {
+            return res.status(400).json({
+                trangThai: "Thất bại",
+                thongBao: "Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ số và ký tự đặc biệt!"
+            });
+        }
+
+        await userService.doiMatKhau(userId, oldPassword, newPassword);
+
+        return res.status(200).json({
+            trangThai: "Thành công",
+            thongBao: "Đổi mật khẩu thành công!"
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+            trangThai: "Thất bại",
+            thongBao: error.message
+        });
+    }
+};
+
+module.exports = { layDanhSachUser, taoUser, dangNhap, uploadAvatar, capNhatThongTin, doiMatKhau };

@@ -42,5 +42,20 @@ const capNhatThongTinUser = async (userId, fullName, phone, gender, dob) => {
     return result.affectedRows > 0;
 };
 
+// thay đổi mật khẩu password
+// 1. Tìm thông tin User theo user_id
+const timUserBangId = async (userId) => {
+    const [rows] = await pool.query("SELECT * FROM Users WHERE user_id = ?", [userId]);
+    return rows.length > 0 ? rows[0] : null;
+};
+// 2. Cập nhật mật khẩu băm mới vào bảng Users
+const capNhatMatKhau = async (userId, newPasswordHash) => {
+    const [result] = await pool.query(
+        "UPDATE Users SET password = ? WHERE user_id = ?", 
+        [newPasswordHash, userId]
+    );
+    return result.affectedRows > 0;
+};
 
-module.exports = { layTatCaUser, taoUserMoi, timUserBangEmail, capNhatAvatar, capNhatThongTinUser };
+
+module.exports = { layTatCaUser, taoUserMoi, timUserBangEmail, capNhatAvatar, capNhatThongTinUser, timUserBangId, capNhatMatKhau};
