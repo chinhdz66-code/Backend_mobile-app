@@ -7,7 +7,7 @@ const layDanhSachUser = async (req, res) => {
     try {
         // Gọi Thủ kho lấy data
         const users = await userModel.layTatCaUser();
-        
+
         // Trả kết quả thành công (Mã 200) về cho Postman/App
         res.status(200).json({
             trangThai: "Thành công",
@@ -163,8 +163,6 @@ const dangNhap = async (req, res) => {
     }
 };
 
-
-
 // xử lí avatar của User
 const uploadAvatar = async (req, res) => {
     try {
@@ -264,3 +262,4 @@ module.exports = {
     capNhatThongTin, 
     doiMatKhau 
 };
+
