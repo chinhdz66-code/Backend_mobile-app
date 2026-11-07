@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 
+
+
 // Middleware xác thực token JWT
 const xacThucToken = (req, res, next) => {
     // 1. Nhìn ra vỏ phong bì xem có ô 'authorization' không
@@ -53,4 +55,7 @@ const kiemTraAdmin = (req, res, next) => {
 };
 
 
-module.exports = { xacThucToken, kiemTraAdmin };
+module.exports = { 
+    xacThucToken, 
+    kiemTraAdmin 
+};

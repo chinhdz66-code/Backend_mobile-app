@@ -12,13 +12,27 @@ const layTatCaUser = async () => {
 
 
 //hàm tạo mới user 
-const taoUserMoi = async (fullName, email, matKhauDaHash, phone, gender, dob) => {
-    // Dùng dấu ? để truyền dữ liệu an toàn
-    const sql = `INSERT INTO Users (full_name, email, password, phone, gender, dob) VALUES (?, ?, ?, ?, ?, ?)`;
-    const [result] = await pool.query(sql, [fullName, email, matKhauDaHash, phone, gender, dob]);
-    
-    // insertId chính là cái ID tự tăng (AUTO_INCREMENT) mà Aiven vừa cấp cho khách
-    return result.insertId; 
+const taoUserCoOTP = async (fullName, email, passwordHash, phone, gender, dob, otpCode, otpExpires) => {
+    const sql = `
+        INSERT INTO Users (full_name, email, password, phone, gender, dob, is_active, otp_code, otp_expires) 
+        VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+    `;
+    const [result] = await pool.query(sql, [fullName, email, passwordHash, phone, gender, dob, otpCode, otpExpires]);
+    return result.insertId;
+};
+
+//hàm xác nhận OTP và kích hoạt tài khoản
+const kichHoatTaiKhoan = async (email) => {
+    const sql = `UPDATE Users SET is_active = 1, otp_code = NULL, otp_expires = NULL WHERE email = ?`;
+    const [result] = await pool.query(sql, [email]);
+    return result.affectedRows > 0;
+};
+
+//hàm cập nhật OTP nếu hết hạn
+const capNhatOTP = async (email, otpCode, otpExpires) => {
+    const sql = `UPDATE Users SET otp_code = ?, otp_expires = ? WHERE email = ?`;
+    const [result] = await pool.query(sql, [otpCode, otpExpires, email]);
+    return result.affectedRows > 0;
 };
 
 //hàm đăng nhập
@@ -58,4 +72,16 @@ const capNhatMatKhau = async (userId, newPasswordHash) => {
 };
 
 
-module.exports = { layTatCaUser, taoUserMoi, timUserBangEmail, capNhatAvatar, capNhatThongTinUser, timUserBangId, capNhatMatKhau};
+
+module.exports = { 
+    layTatCaUser, 
+    taoUserCoOTP, 
+    kichHoatTaiKhoan, 
+    capNhatOTP, 
+    timUserBangEmail, 
+    capNhatAvatar, 
+    capNhatThongTinUser, 
+    timUserBangId, 
+    capNhatMatKhau
+};
+
