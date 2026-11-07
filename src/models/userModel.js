@@ -49,7 +49,6 @@ const capNhatAvatar = async (userId, avatarUrl) => {
     return result.affectedRows > 0;
 };
 
-
 // cập nhật thông tin user
 const capNhatThongTinUser = async (userId, fullName, phone, gender, dob) => {
     const sql = 'UPDATE Users SET full_name = ?, phone = ?, gender = ?, dob = ? WHERE user_id = ?';
@@ -73,6 +72,7 @@ const capNhatMatKhau = async (userId, newPasswordHash) => {
 };
 
 
+
 module.exports = { 
     layTatCaUser, 
     taoUserCoOTP, 
@@ -82,4 +82,6 @@ module.exports = {
     capNhatAvatar, 
     capNhatThongTinUser, 
     timUserBangId, 
-    capNhatMatKhau};
+    capNhatMatKhau
+};
+
