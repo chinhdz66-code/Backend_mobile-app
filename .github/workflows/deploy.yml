@@ -66,26 +66,52 @@ jobs:
           sudo chmod +x /usr/local/bin/cloudflared
 
       - name: SSH qua Cloudflare Tunnel và Deploy container
-        uses: appleboy/ssh-action@v1.0.3
         env:
           NEW_TAG: ${{ needs.build-and-push.outputs.image_tag }}
           DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          proxy_command: cloudflared access ssh --hostname %h --id ${{ secrets.CF_CLIENT_ID }} --secret ${{ secrets.CF_CLIENT_SECRET }}
-          envs: NEW_TAG,DOCKER_USER
-          script: |
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          CF_CLIENT_ID: ${{ secrets.CF_CLIENT_ID }}
+          CF_CLIENT_SECRET: ${{ secrets.CF_CLIENT_SECRET }}
+        run: |
+          # 1. Khởi tạo thư mục SSH
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          # 2. Lưu private key
+          echo "$SERVER_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          # 3. Tạo file cấu hình SSH với ProxyCommand gọi cloudflared
+          cat <<EOF > ~/.ssh/config
+          Host $SERVER_HOST
+            User $SERVER_USER
+            IdentityFile ~/.ssh/id_rsa
+            ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h --id $CF_CLIENT_ID --secret $CF_CLIENT_SECRET
+            StrictHostKeyChecking no
+          EOF
+
+          # 4. Thực thi SSH và chạy script trên máy đích (Đã sửa bỏ nháy đơn ở EOF_SSH)
+          ssh $SERVER_HOST << EOF_SSH
+            # Di chuyển vào thư mục dự án trên VM
             cd /home/ubuntu/Backend_mobile-app
-            echo "Đang triển khai phiên bản hash: $NEW_TAG"
-            docker pull $DOCKER_USER/backend-mobile-app:$NEW_TAG
-
+            
+            echo "Đang triển khai phiên bản hash: ${NEW_TAG}"
+            
+            # Kéo Docker image có hash mới nhất
+            docker pull ${DOCKER_USER}/backend-mobile-app:${NEW_TAG}
+            
+            # Cập nhật biến môi trường IMAGE_TAG trong file .env cho docker-compose
             if grep -q "^IMAGE_TAG=" .env 2>/dev/null; then
-              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$NEW_TAG/" .env
+              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${NEW_TAG}/" .env
             else
-              echo "IMAGE_TAG=$NEW_TAG" >> .env
+              echo "IMAGE_TAG=${NEW_TAG}" >> .env
             fi
-
-            IMAGE_TAG=$NEW_TAG docker compose up -d --remove-orphans
+            
+            # Khởi động lại container với image mới
+            IMAGE_TAG=${NEW_TAG} docker compose up -d --remove-orphans
+            
+            # Dọn dẹp image cũ
             docker image prune -f
+          EOF_SSH
