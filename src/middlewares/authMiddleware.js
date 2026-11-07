@@ -1,5 +1,21 @@
 const jwt = require('jsonwebtoken');
 
+app.use((err, req, res, next) => {
+    // Nếu lỗi là do sai cú pháp JSON (SyntaxError)
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        // In một dòng thông báo nhỏ cho gọn log, không in stack trace dài ngoằng
+        console.warn('Cảnh báo: Client gửi lên JSON sai cú pháp!');
+        
+        // Trả về lỗi cho Postman đọc
+        return res.status(400).json({ 
+            trangThai: "Thất bại", 
+            thongBao: "Dữ liệu JSON gửi lên bị sai cú pháp." 
+        });
+    }
+    // Nếu là lỗi khác thì cho đi tiếp
+    next();
+});
+
 // Middleware xác thực token JWT
 const xacThucToken = (req, res, next) => {
     // 1. Nhìn ra vỏ phong bì xem có ô 'authorization' không

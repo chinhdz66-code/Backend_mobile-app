@@ -1,5 +1,6 @@
 const userModel = require('../models/userModel');
 const userService = require('../services/userService');
+const emailService = require('../services/emailService');
 
 //lấy danh sách user
 const layDanhSachUser = async (req, res) => {
@@ -26,27 +27,113 @@ const layDanhSachUser = async (req, res) => {
 //tao user mới
 const taoUser = async (req, res) => {
     try {
-        // Rút thông tin từ túi (body) mà khách hàng gửi lên (Phải khớp chính xác với key trên Postman)
         const { full_name, email, password, phone, gender, dob } = req.body;
 
         if (!full_name || !email || !password || !phone || !dob) {
             return res.status(400).json({ trangThai: "Thất bại", thongBao: "Thiếu thông tin!" });
         }
 
-        // Nhờ Bếp trưởng xử lý mã hóa và lưu trữ (Truyền đúng tên biến vừa lấy ở trên)
-        const newUserId = await userService.dangKyUser(full_name, email, password, phone, gender, dob);
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 3 * 60 * 1000);
 
-        res.status(201).json({
+        // 1. Cất vào Database
+        const newUserId = await userService.dangKyUser(full_name, email, password, phone, gender, dob, otpCode, otpExpires);
+
+        // 2. Gửi Email 
+        await emailService.guiMailOTP(email, otpCode);
+
+        return res.status(201).json({
             trangThai: "Thành công",
-            thongBao: "Đăng ký thành công!",
+            thongBao: "Đăng ký thành công! Vui lòng kiểm tra Email để lấy mã OTP.",
             duLieu: { id: newUserId, email: email }
         });
     } catch (error) {
-        // Bắt lỗi MySQL: 1062 là mã khi bị trùng cột UNIQUE (Email)
+        console.error("LỖI CONTROLLER:", error); 
+        
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ trangThai: "Thất bại", thongBao: "Email này đã tồn tại!" });
+            return res.status(409).json({ trangThai: "Thất bại", thongBao: "Email hoặc SĐT đã tồn tại!" });
         }
-        res.status(500).json({ trangThai: "Thất bại", chiTiet: error.message });
+        
+        
+        return res.status(500).json({ trangThai: "Thất bại", chiTiet: error.message });
+    }
+};
+
+//gui lại OTP
+const guiLaiOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ thongBao: "Vui lòng cung cấp email!" });
+
+        // 1. Kiểm tra user
+        const user = await userModel.timUserBangEmail(email);
+        if (!user) {
+            return res.status(404).json({ thongBao: "Email này chưa từng đăng ký!" });
+        }
+        
+        // 2. Nếu đã kích hoạt rồi thì không gửi nữa
+        if (user.is_active === 1) {
+            return res.status(400).json({ thongBao: "Tài khoản này đã được kích hoạt từ trước!" });
+        }
+
+        // 3. Sinh OTP mới
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 3 * 60 * 1000);
+
+        // 4. Lưu OTP mới vào DB và gửi mail
+        await userModel.capNhatOTP(email, otpCode, otpExpires);
+        await emailService.guiMailOTP(email, otpCode);
+
+        return res.status(200).json({ 
+            trangThai: "Thành công", 
+            thongBao: "Đã gửi lại mã OTP mới! Mã có hiệu lực trong 3 phút." 
+        });
+
+    } catch (error) {
+        return res.status(500).json({ trangThai: "Thất bại", chiTiet: error.message });
+    }
+};
+
+//xác nhận OTP 
+const xacThucOTP = async (req, res) => {
+    try {
+        const { email, otpCode } = req.body;
+
+        if (!email || !otpCode) {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Vui lòng cung cấp Email và Mã OTP!" });
+        }
+
+        // 1. Tìm user
+        const user = await userModel.timUserBangEmail(email);
+        if (!user) {
+            return res.status(404).json({ trangThai: "Thất bại", thongBao: "Không tìm thấy tài khoản này!" });
+        }
+
+        // 2. Check trạng thái
+        if (user.is_active === 1) {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Tài khoản đã được kích hoạt từ trước!" });
+        }
+
+        // 3. Check OTP có khớp không
+        if (user.otp_code !== String(otpCode)) {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Mã OTP không chính xác!" });
+        }
+
+        // 4. Check thời gian 3 phút
+        if (new Date() > new Date(user.otp_expires)) {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Mã OTP đã hết hạn (quá 3 phút)!" });
+        }
+
+        // 5. Cấp thẻ xanh
+        await userModel.kichHoatTaiKhoan(email);
+
+        return res.status(200).json({
+            trangThai: "Thành công",
+            thongBao: "Xác thực tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ."
+        });
+
+    } catch (error) {
+        return res.status(500).json({ trangThai: "Thất bại", chiTiet: error.message });
     }
 };
 
@@ -76,4 +163,104 @@ const dangNhap = async (req, res) => {
     }
 };
 
-module.exports = { layDanhSachUser, taoUser, dangNhap };
+
+
+// xử lí avatar của User
+const uploadAvatar = async (req, res) => {
+    try {
+        const { user_id } = req.body;
+        if (!req.file) {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Vui lòng chọn file ảnh!" });
+        }
+
+        // Tạo URL ảnh công khai dạng: http://<IP>:8080/uploads/avatars/filename.jpg
+        const avatarUrl = `${req.protocol}://${req.get('host')}/uploads/avatars/${req.file.filename}`;
+
+        // Gọi model cập nhật vào MySQL
+        await userModel.capNhatAvatar(user_id, avatarUrl);
+
+        return res.status(200).json({
+            trangThai: "Thành công",
+            thongBao: "Cập nhật ảnh đại diện thành công!",
+            avatar_url: avatarUrl
+        });
+    } catch (error) {
+        return res.status(500).json({ trangThai: "Thất bại", thongBao: error.message });
+    }
+};
+
+// cập nhật thông tin profile
+const capNhatThongTin = async (req, res) => {
+    try {
+        const { user_id, full_name, phone, gender, dob } = req.body;
+        if (!user_id || !full_name) {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Thiếu thông tin!" });
+        }
+
+        await userModel.capNhatThongTinUser(user_id, full_name, phone, gender, dob);
+
+        return res.status(200).json({
+            trangThai: "Thành công",
+            thongBao: "Cập nhật thông tin thành công!"
+        });
+    } catch (error) {
+        return res.status(500).json({ trangThai: "Thất bại", thongBao: error.message });
+    }
+};
+
+// thay đổi mật khẩu 
+const doiMatKhau = async (req, res) => {
+    try {
+        // Lấy userId trực tiếp từ Token đã được Middleware giải mã (Bảo mật tuyệt đối, không nhận từ body)
+        const userId = req.user?.user_id;
+        const oldPassword = req.body.oldPassword || req.body.old_password;
+        const newPassword = req.body.newPassword || req.body.new_password;
+
+        if (!userId) {
+            return res.status(401).json({
+                trangThai: "Thất bại",
+                thongBao: "Không tìm thấy thông tin xác thực từ Token!"
+            });
+        }
+
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({
+                trangThai: "Thất bại",
+                thongBao: "Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới!"
+            });
+        }
+
+        // Regex: Tối thiểu 8 ký tự, 1 chữ hoa, 1 chữ số, 1 ký tự đặc biệt
+        const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!passwordRegex.test(newPassword)) {
+            return res.status(400).json({
+                trangThai: "Thất bại",
+                thongBao: "Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ số và ký tự đặc biệt!"
+            });
+        }
+
+        await userService.doiMatKhau(userId, oldPassword, newPassword);
+
+        return res.status(200).json({
+            trangThai: "Thành công",
+            thongBao: "Đổi mật khẩu thành công!"
+        });
+
+    } catch (error) {
+        return res.status(400).json({
+            trangThai: "Thất bại",
+            thongBao: error.message
+        });
+    }
+};
+
+module.exports = { 
+    layDanhSachUser, 
+    taoUser, 
+    xacThucOTP,
+    guiLaiOTP, 
+    dangNhap, 
+    uploadAvatar, 
+    capNhatThongTin, 
+    doiMatKhau 
+};

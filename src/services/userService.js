@@ -2,19 +2,22 @@ const bcrypt = require('bcrypt');
 const userModel = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 
-//xử lý đăng ký user mới
-const dangKyUser = async (fullName, email, matKhauGoc, phone, gender, dob) => {
-    // Độ mặn (salt): 10 là mức chuẩn, số càng to băm càng lâu nhưng càng an toàn
+// Xử lý đăng ký user mới
+const dangKyUser = async (fullName, email, matKhauGoc, phone, gender, dob, otpCode, otpExpires) => {
+    // Độ mặn (salt): 10 là mức chuẩn
     const saltRounds = 10;
     
     // Tiến hành băm mật khẩu
     const matKhauDaHash = await bcrypt.hash(matKhauGoc, saltRounds);
     
-    // Giao mật khẩu đã mã hóa cho Thủ kho đem cất
-    const newUserId = await userModel.taoUserMoi(fullName, email, matKhauDaHash, phone, gender, dob);
+    // Giao mật khẩu đã mã hóa cùng mã OTP cho Thủ kho đem cất
+    const newUserId = await userModel.taoUserCoOTP(
+    fullName, email, matKhauDaHash, phone, gender, dob, otpCode, otpExpires
+    );
     
     return newUserId;
 };
+
 
 //xử lý đăng nhập user
 const dangNhapUser = async (email, matKhauNhapVao) => {

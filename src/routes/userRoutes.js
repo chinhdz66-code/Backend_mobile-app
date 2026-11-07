@@ -7,6 +7,8 @@ const authMiddleware = require('../middlewares/authMiddleware');
 // Phân luồng: Khách dùng lệnh GET gọi vào URL gốc thì giao cho hàm layDanhSachUser
 router.get('/', authMiddleware.xacThucToken, authMiddleware.kiemTraAdmin, userController.layDanhSachUser);
 router.post('/', userController.taoUser);
+router.post('/verify-otp', userController.xacThucOTP);
+router.post('/resend-otp', userController.guiLaiOTP);
 router.post('/login', userController.dangNhap);
 
 module.exports = router;
