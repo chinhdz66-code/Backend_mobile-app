@@ -6,7 +6,7 @@ const layDanhSachUser = async (req, res) => {
     try {
         // Gọi Thủ kho lấy data
         const users = await userModel.layTatCaUser();
-        
+
         // Trả kết quả thành công (Mã 200) về cho Postman/App
         res.status(200).json({
             trangThai: "Thành công",
@@ -122,15 +122,22 @@ const capNhatThongTin = async (req, res) => {
 // thay đổi mật khẩu 
 const doiMatKhau = async (req, res) => {
     try {
-        // Lấy userId ưu tiên từ Middleware Token, sau đó mới tới body
-        const userId = req.user?.user_id || req.body.userId || req.body.user_id;
+        // Lấy userId trực tiếp từ Token đã được Middleware giải mã (Bảo mật tuyệt đối, không nhận từ body)
+        const userId = req.user?.user_id;
         const oldPassword = req.body.oldPassword || req.body.old_password;
         const newPassword = req.body.newPassword || req.body.new_password;
 
-        if (!userId || !oldPassword || !newPassword) {
+        if (!userId) {
+            return res.status(401).json({
+                trangThai: "Thất bại",
+                thongBao: "Không tìm thấy thông tin xác thực từ Token!"
+            });
+        }
+
+        if (!oldPassword || !newPassword) {
             return res.status(400).json({
                 trangThai: "Thất bại",
-                thongBao: "Vui lòng nhập đầy đủ thông tin mật khẩu!"
+                thongBao: "Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới!"
             });
         }
 
