@@ -92,11 +92,17 @@ jobs:
             StrictHostKeyChecking no
           EOF
 
-          # 4. Thực thi SSH và chạy script trên máy đích (Đã sửa bỏ nháy đơn ở EOF_SSH)
+          # 4. Thực thi SSH và chạy script trên máy đích
           ssh $SERVER_HOST << EOF_SSH
             # Di chuyển vào thư mục dự án trên VM
             cd /home/ubuntu/Backend_mobile-app
             
+            # --- ĐOẠN CODE MỚI THÊM: ĐỒNG BỘ MÃ NGUỒN TỪ GITHUB ---
+            echo "Đang kéo mã nguồn mới nhất từ nhánh main..."
+            git fetch origin main
+            git reset --hard origin/main
+            # ------------------------------------------------------
+
             echo "Đang triển khai phiên bản hash: ${NEW_TAG}"
             
             # Kéo Docker image có hash mới nhất
