@@ -49,6 +49,7 @@ const capNhatAvatar = async (userId, avatarUrl) => {
     return result.affectedRows > 0;
 };
 
+
 // cập nhật thông tin user
 const capNhatThongTinUser = async (userId, fullName, phone, gender, dob) => {
     const sql = 'UPDATE Users SET full_name = ?, phone = ?, gender = ?, dob = ? WHERE user_id = ?';
@@ -71,7 +72,14 @@ const capNhatMatKhau = async (userId, newPasswordHash) => {
     return result.affectedRows > 0;
 };
 
-
+// 3. Quên mật khẩu, cập nhật mật khẩu mới theo email
+const quenMatKhau = async (email, newPasswordHash) => {
+    const [result] = await pool.query(
+        "UPDATE Users SET password = ?, otp_code = NULL, otp_expires = NULL WHERE email = ?", 
+        [newPasswordHash, email]
+    );
+    return result.affectedRows > 0;
+};
 
 module.exports = { 
     layTatCaUser, 
@@ -82,6 +90,6 @@ module.exports = {
     capNhatAvatar, 
     capNhatThongTinUser, 
     timUserBangId, 
-    capNhatMatKhau
+    capNhatMatKhau,
+    quenMatKhau
 };
-

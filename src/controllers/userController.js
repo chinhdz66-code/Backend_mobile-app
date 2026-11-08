@@ -265,6 +265,62 @@ const doiMatKhau = async (req, res) => {
     }
 };
 
+//quen mat khau
+const forgotPass = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ trangThai: "Thất bại", thongBao: "Vui lòng cung cấp email!" });
+
+        // Gọi Service gửi OTP
+        await userService.guiOtpQuenMatKhau(email);
+        
+        res.status(200).json({ trangThai: "Thành công", thongBao: "Mã OTP đã được gửi đến email của bạn." });
+    } catch (error) {
+
+        if (error.message === "Tài khoản chưa được kích hoạt") {
+            return res.status(403).json({ 
+                trangThai: "Thất bại", 
+                thongBao: "Tài khoản chưa được kích hoạt. Vui lòng xác thực tài khoản trước!", 
+                maLoi: "NOT_ACTIVATED",
+                email: req.body.email 
+            });
+        }
+
+        if (error.message === "Email không tồn tại trong hệ thống") {
+            return res.status(404).json({ trangThai: "Thất bại", thongBao: error.message });
+        }
+        res.status(500).json({ trangThai: "Thất bại", chiTiet: error.message });
+    }
+};
+
+const resetPass = async (req, res) => {
+    try {
+        const { email, otp, matKhauMoi } = req.body;
+        
+        if (!email || !otp || !matKhauMoi) {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Vui lòng nhập đủ email, mã OTP và mật khẩu mới!" });
+        }
+
+        // Gọi Service đặt lại mật khẩu
+        await userService.datLaiMatKhau(email, otp, matKhauMoi);
+
+        res.status(200).json({ trangThai: "Thành công", thongBao: "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập ngay." });
+    } catch (error) {
+        // TRẢ LỖI OTP CHO FRONTEND THEO TỪNG TRƯỜNG HỢP:
+        if (error.message === "Mã OTP không chính xác") {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: error.message, maLoi: "OTP_INVALID" });
+        }
+        if (error.message === "Mã OTP đã hết hạn") {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: error.message, maLoi: "OTP_EXPIRED" });
+        }
+        
+        if (error.message === "Email không tồn tại trong hệ thống") {
+            return res.status(404).json({ trangThai: "Thất bại", thongBao: error.message });
+        }
+        res.status(500).json({ trangThai: "Thất bại", chiTiet: error.message });
+    }
+};
+
 module.exports = { 
     layDanhSachUser, 
     taoUser, 
@@ -273,6 +329,8 @@ module.exports = {
     dangNhap, 
     uploadAvatar, 
     capNhatThongTin, 
-    doiMatKhau 
+    doiMatKhau,
+    forgotPass,
+    resetPass
 };
 

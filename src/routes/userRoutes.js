@@ -31,5 +31,7 @@ router.post('/', userController.taoUser);
 router.post('/verify-otp', userController.xacThucOTP);
 router.post('/resend-otp', userController.guiLaiOTP);
 router.post('/login', userController.dangNhap);
+router.post('/forgot-pass', userController.forgotPass);
+router.post('/reset-pass', userController.resetPass);
 router.post('/change-password', authMiddleware.xacThucToken, userController.doiMatKhau);
 module.exports = router;
