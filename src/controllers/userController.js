@@ -156,9 +156,22 @@ const dangNhap = async (req, res) => {
             duLieu: ketQua.user
         });
     } catch (error) {
+        // Bắt lỗi tài khoản chưa kích hoạt
+        if (error.message === "Tài khoản chưa được kích hoạt") {
+            return res.status(403).json({ 
+                trangThai: "Thất bại", 
+                thongBao: "Tài khoản chưa được kích hoạt. Vui lòng xác thực OTP!", 
+                maLoi: "NOT_ACTIVATED",
+                email: req.body.email // Bắn email về cho Frontend
+            });
+        }
+
+        // Bắt lỗi sai mật khẩu hoặc email
         if (error.message === "Email hoặc mật khẩu không chính xác") {
             return res.status(401).json({ trangThai: "Thất bại", thongBao: error.message });
         }
+        
+        // Lỗi hệ thống khác
         res.status(500).json({ trangThai: "Thất bại", chiTiet: error.message });
     }
 };
