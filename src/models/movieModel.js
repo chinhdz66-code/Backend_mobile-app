@@ -12,6 +12,40 @@ const layPhimTheoTrangThai = async (status, sortOrder = 'DESC') => {
     return rows;
 };
 
+// Hàm tim kiếm phim theo tên (dùng cho thanh tìm kiếm)
+const timKiemTheoTen = async (keyword) => {
+    const query = 'SELECT * FROM Movies WHERE title LIKE ? ORDER BY release_date DESC';
+    const [rows] = await pool.query(query, [`%${keyword}%`]);
+    return rows;
+};
+
+// Hàm lọc phim theo nhiều tiêu chí: trạng thái, thể loại, năm phát hành
+const locPhimNangCao = async (status, genre, year) => {
+    let query = 'SELECT * FROM Movies WHERE 1=1';
+    let params = [];
+
+    if (status) {
+        query += ' AND status = ?';
+        params.push(status);
+    }
+    if (genre) {
+        query += ' AND genre LIKE ?';
+        params.push(`%${genre}%`);
+    }
+    if (year) {
+        // Hàm YEAR() trích xuất số năm (VD: 2024) từ chuỗi ngày tháng 2024-02-10
+        query += ' AND YEAR(release_date) = ?';
+        params.push(year); 
+    }
+
+    query += ' ORDER BY release_date DESC';
+
+    const [rows] = await pool.query(query, params);
+    return rows;
+};
+
 module.exports = {
-    layPhimTheoTrangThai
+    layPhimTheoTrangThai,
+    timKiemTheoTen,
+    locPhimNangCao
 };
