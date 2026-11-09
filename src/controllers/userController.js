@@ -48,13 +48,13 @@ const taoUser = async (req, res) => {
             duLieu: { id: newUserId, email: email }
         });
     } catch (error) {
-        console.error("LỖI CONTROLLER:", error); 
-        
+        console.error("LỖI CONTROLLER:", error);
+
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ trangThai: "Thất bại", thongBao: "Email hoặc SĐT đã tồn tại!" });
         }
-        
-        
+
+
         return res.status(500).json({ trangThai: "Thất bại", chiTiet: error.message });
     }
 };
@@ -70,7 +70,7 @@ const guiLaiOTP = async (req, res) => {
         if (!user) {
             return res.status(404).json({ thongBao: "Email này chưa từng đăng ký!" });
         }
-        
+
         // 2. Nếu đã kích hoạt rồi thì không gửi nữa
         if (user.is_active === 1) {
             return res.status(400).json({ thongBao: "Tài khoản này đã được kích hoạt từ trước!" });
@@ -84,9 +84,9 @@ const guiLaiOTP = async (req, res) => {
         await userModel.capNhatOTP(email, otpCode, otpExpires);
         await emailService.guiMailOTP(email, otpCode);
 
-        return res.status(200).json({ 
-            trangThai: "Thành công", 
-            thongBao: "Đã gửi lại mã OTP mới! Mã có hiệu lực trong 3 phút." 
+        return res.status(200).json({
+            trangThai: "Thành công",
+            thongBao: "Đã gửi lại mã OTP mới! Mã có hiệu lực trong 3 phút."
         });
 
     } catch (error) {
@@ -158,9 +158,9 @@ const dangNhap = async (req, res) => {
     } catch (error) {
         // Bắt lỗi tài khoản chưa kích hoạt
         if (error.message === "Tài khoản chưa được kích hoạt") {
-            return res.status(403).json({ 
-                trangThai: "Thất bại", 
-                thongBao: "Tài khoản chưa được kích hoạt. Vui lòng xác thực OTP!", 
+            return res.status(403).json({
+                trangThai: "Thất bại",
+                thongBao: "Tài khoản chưa được kích hoạt. Vui lòng xác thực OTP!",
                 maLoi: "NOT_ACTIVATED",
                 email: req.body.email // Bắn email về cho Frontend
             });
@@ -170,16 +170,47 @@ const dangNhap = async (req, res) => {
         if (error.message === "Email hoặc mật khẩu không chính xác") {
             return res.status(401).json({ trangThai: "Thất bại", thongBao: error.message });
         }
-        
+
         // Lỗi hệ thống khác
         res.status(500).json({ trangThai: "Thất bại", chiTiet: error.message });
+    }
+};
+
+// lấy thông tin profile cá nhân của user đang đăng nhập qua Token
+const layThongTinCaNhan = async (req, res) => {
+    try {
+        const userId = req.user?.user_id;
+        if (!userId) {
+            return res.status(401).json({ trangThai: "Thất bại", thongBao: "Không tìm thấy thông tin xác thực từ Token!" });
+        }
+
+        const user = await userModel.timUserBangId(userId);
+        if (!user) {
+            return res.status(404).json({ trangThai: "Thất bại", thongBao: "Người dùng không tồn tại!" });
+        }
+
+        delete user.password;
+        delete user.otp_code;
+        delete user.otp_expires;
+
+        return res.status(200).json({
+            trangThai: "Thành công",
+            duLieu: user
+        });
+    } catch (error) {
+        return res.status(500).json({ trangThai: "Thất bại", chiTiet: error.message });
     }
 };
 
 // xử lí avatar của User
 const uploadAvatar = async (req, res) => {
     try {
-        const { user_id } = req.body;
+        // Lấy userId trực tiếp từ Token JWT đã giải mã (Bảo mật tuyệt đối, chống giả mạo user_id)
+        const userId = req.user?.user_id || req.body.user_id;
+        if (!userId) {
+            return res.status(401).json({ trangThai: "Thất bại", thongBao: "Không tìm thấy thông tin xác thực từ Token!" });
+        }
+
         if (!req.file) {
             return res.status(400).json({ trangThai: "Thất bại", thongBao: "Vui lòng chọn file ảnh!" });
         }
@@ -188,7 +219,7 @@ const uploadAvatar = async (req, res) => {
         const avatarUrl = `${req.protocol}://${req.get('host')}/uploads/avatars/${req.file.filename}`;
 
         // Gọi model cập nhật vào MySQL
-        await userModel.capNhatAvatar(user_id, avatarUrl);
+        await userModel.capNhatAvatar(userId, avatarUrl);
 
         return res.status(200).json({
             trangThai: "Thành công",
@@ -203,12 +234,19 @@ const uploadAvatar = async (req, res) => {
 // cập nhật thông tin profile
 const capNhatThongTin = async (req, res) => {
     try {
-        const { user_id, full_name, phone, gender, dob } = req.body;
-        if (!user_id || !full_name) {
-            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Thiếu thông tin!" });
+        // Lấy userId trực tiếp từ Token JWT đã giải mã (Bảo mật tuyệt đối)
+        const userId = req.user?.user_id || req.body.user_id;
+        const { full_name, phone, gender, dob } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ trangThai: "Thất bại", thongBao: "Không tìm thấy thông tin xác thực từ Token!" });
         }
 
-        await userModel.capNhatThongTinUser(user_id, full_name, phone, gender, dob);
+        if (!full_name) {
+            return res.status(400).json({ trangThai: "Thất bại", thongBao: "Vui lòng nhập họ và tên!" });
+        }
+
+        await userModel.capNhatThongTinUser(userId, full_name, phone, gender, dob);
 
         return res.status(200).json({
             trangThai: "Thành công",
@@ -273,16 +311,16 @@ const forgotPass = async (req, res) => {
 
         // Gọi Service gửi OTP
         await userService.guiOtpQuenMatKhau(email);
-        
+
         res.status(200).json({ trangThai: "Thành công", thongBao: "Mã OTP đã được gửi đến email của bạn." });
     } catch (error) {
 
         if (error.message === "Tài khoản chưa được kích hoạt") {
-            return res.status(403).json({ 
-                trangThai: "Thất bại", 
-                thongBao: "Tài khoản chưa được kích hoạt. Vui lòng xác thực tài khoản trước!", 
+            return res.status(403).json({
+                trangThai: "Thất bại",
+                thongBao: "Tài khoản chưa được kích hoạt. Vui lòng xác thực tài khoản trước!",
                 maLoi: "NOT_ACTIVATED",
-                email: req.body.email 
+                email: req.body.email
             });
         }
 
@@ -296,7 +334,7 @@ const forgotPass = async (req, res) => {
 const resetPass = async (req, res) => {
     try {
         const { email, otp, matKhauMoi } = req.body;
-        
+
         if (!email || !otp || !matKhauMoi) {
             return res.status(400).json({ trangThai: "Thất bại", thongBao: "Vui lòng nhập đủ email, mã OTP và mật khẩu mới!" });
         }
@@ -313,7 +351,7 @@ const resetPass = async (req, res) => {
         if (error.message === "Mã OTP đã hết hạn") {
             return res.status(400).json({ trangThai: "Thất bại", thongBao: error.message, maLoi: "OTP_EXPIRED" });
         }
-        
+
         if (error.message === "Email không tồn tại trong hệ thống") {
             return res.status(404).json({ trangThai: "Thất bại", thongBao: error.message });
         }
@@ -321,14 +359,15 @@ const resetPass = async (req, res) => {
     }
 };
 
-module.exports = { 
-    layDanhSachUser, 
-    taoUser, 
+module.exports = {
+    layDanhSachUser,
+    layThongTinCaNhan,
+    taoUser,
     xacThucOTP,
-    guiLaiOTP, 
-    dangNhap, 
-    uploadAvatar, 
-    capNhatThongTin, 
+    guiLaiOTP,
+    dangNhap,
+    uploadAvatar,
+    capNhatThongTin,
     doiMatKhau,
     forgotPass,
     resetPass
