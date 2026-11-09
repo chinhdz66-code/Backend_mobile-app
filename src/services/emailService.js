@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 
+//xử lý gửi mail OTP
 const guiMailOTP = async (emailNhan, maOTP) => {
     try {
         const transporter = nodemailer.createTransport({

@@ -4,7 +4,7 @@ const userController = require('../controllers/userController');
 
 const authMiddleware = require('../middlewares/authMiddleware');
 
-// 1. Thêm thư viện multer và path để xử lý file
+// 1. thư viện multer và path để xử lý file
 const multer = require('multer');
 const path = require('path');
 
@@ -21,17 +21,30 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// 3. Thêm Route upload ảnh đại diện & cập nhật thông tin
+
+// Phân luồng
+// lấy ds users
+router.get('/', authMiddleware.xacThucToken, authMiddleware.kiemTraAdmin, userController.layDanhSachUser);
+
+// đăng ký user mới
+router.post('/', userController.taoUser);
+
+//xác thực OTP
+router.post('/verify-otp', userController.xacThucOTP);
+router.post('/resend-otp', userController.guiLaiOTP);
+
+//đăng nhập 
+router.post('/login', userController.dangNhap);
+
+//quên mật khẩu và đặt lại mật khẩu
+router.post('/forgot-pass', userController.forgotPass);
+router.post('/reset-pass', userController.resetPass);
+
+// đổi mật khẩu
+router.post('/change-password', authMiddleware.xacThucToken, userController.doiMatKhau);
+
+// profile
 router.post('/upload-avatar', upload.single('avatar'), userController.uploadAvatar);
 router.post('/update-profile', userController.capNhatThongTin);
 
-// Phân luồng: Khách dùng lệnh GET gọi vào URL gốc thì giao cho hàm layDanhSachUser
-router.get('/', authMiddleware.xacThucToken, authMiddleware.kiemTraAdmin, userController.layDanhSachUser);
-router.post('/', userController.taoUser);
-router.post('/verify-otp', userController.xacThucOTP);
-router.post('/resend-otp', userController.guiLaiOTP);
-router.post('/login', userController.dangNhap);
-router.post('/forgot-pass', userController.forgotPass);
-router.post('/reset-pass', userController.resetPass);
-router.post('/change-password', authMiddleware.xacThucToken, userController.doiMatKhau);
 module.exports = router;
