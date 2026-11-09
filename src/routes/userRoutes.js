@@ -43,8 +43,9 @@ router.post('/reset-pass', userController.resetPass);
 // đổi mật khẩu
 router.post('/change-password', authMiddleware.xacThucToken, userController.doiMatKhau);
 
-// profile
-router.post('/upload-avatar', upload.single('avatar'), userController.uploadAvatar);
-router.post('/update-profile', userController.capNhatThongTin);
+// profile 
+router.get('/profile', authMiddleware.xacThucToken, userController.layThongTinCaNhan);
+router.post('/upload-avatar', authMiddleware.xacThucToken, upload.single('avatar'), userController.uploadAvatar);
+router.post('/update-profile', authMiddleware.xacThucToken, userController.capNhatThongTin);
 
 module.exports = router;
