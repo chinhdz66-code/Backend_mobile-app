@@ -14,7 +14,19 @@ const layPhimSapChieu = async () => {
     return movies;
 };
 
+// xử lý tìm kiếm phim nhanh theo tên
+const timKiemPhimNhanh = async (keyword) => {
+    return await movieModel.timKiemTheoTen(keyword);
+};
+
+// xử lý lọc phim nâng cao theo nhiều tiêu chí: trạng thái, thể loại, năm phát hành
+const locPhim = async (status, genre, year) => {
+    return await movieModel.locPhimNangCao(status, genre, year);
+};
+
 module.exports = {
     layPhimDangChieu,
-    layPhimSapChieu
+    layPhimSapChieu,
+    timKiemPhimNhanh,
+    locPhim
 };
