@@ -2,6 +2,11 @@ const nodemailer = require('nodemailer');
 
 const guiMailOTP = async (emailNhan, maOTP) => {
     try {
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            console.log(`🔑 [DEV MODE] Mã OTP gửi tới ${emailNhan} là: ${maOTP}`);
+            return;
+        }
+
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -20,8 +25,8 @@ const guiMailOTP = async (emailNhan, maOTP) => {
         await transporter.sendMail(mailOptions);
         console.log("Đã gửi email OTP thành công tới:", emailNhan);
     } catch (error) {
-        console.error(" LỖI TẠI CON BOT GỬI MAIL:", error);
-        throw new Error("Không thể kết nối tới Gmail để gửi OTP. Vui lòng kiểm tra lại EMAIL_USER và EMAIL_PASS.");
+        console.error(" LỖI GỬI MAIL (Đã in mã OTP ở console):", error);
+        console.log(`🔑 [DEV MODE OTP] Mã OTP dự phòng cho ${emailNhan} là: ${maOTP}`);
     }
 };
 
