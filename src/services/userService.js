@@ -72,7 +72,7 @@ const guiOtpQuenMatKhau = async (email) => {
     const otpExpires = new Date(Date.now() + 3 * 60 * 1000); 
 
     await userModel.capNhatOTP(email, otpCode, otpExpires);
-    await emailService.guiMailOTP(email, otpCode);
+    await emailService.guiMailOTP(email, otpCode, 'QUEN_MAT_KHAU');
     
     return true;
 };
