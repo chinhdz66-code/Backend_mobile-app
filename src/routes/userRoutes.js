@@ -12,7 +12,9 @@ const path = require('path');
 // 2. Cấu hình vị trí lưu và đặt tên file tự động (tránh trùng lặp tên)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/avatars/');
+        const uploadPath = path.join(__dirname, '../../uploads/avatars'); 
+        
+        cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
