@@ -14,6 +14,8 @@ services:
       - 1.1.1.1
     env_file:
       - .env
+    volumes:
+      - ./uploads:/app/uploads
     networks:
       - app-network
 
