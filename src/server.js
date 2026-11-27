@@ -44,11 +44,17 @@ const userRoutes = require('./routes/userRoutes');
 // Nạp bản đồ phân luồng của khu vực Movies
 const movieRoutes = require('./routes/movieRoutes');
 
+// Nạp bản đồ phân luồng của khu vực Reviews
+const reviewRoutes = require('./routes/reviewRoutes');
+
 // Định tuyến tổng: Mọi luồng đi vào /api/users đều phải chạy qua userRoutes
 app.use('/api/users', userRoutes);
 
 // Định tuyến tổng: Mọi luồng đi vào /api/movies đều phải chạy qua movieRoutes
 app.use('/api/movies', movieRoutes);
+
+// Định tuyến tổng: Mọi luồng đi vào /api/reviews đều phải chạy qua reviewRoutes
+app.use('/api/reviews', reviewRoutes);
 
 // Cho sever chạy và bắt đầu lắng nghe các request từ client
 app.listen(PORT, '0.0.0.0', () => {
