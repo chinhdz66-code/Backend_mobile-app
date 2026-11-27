@@ -24,9 +24,26 @@ const locPhim = async (status, genre, year) => {
     return await movieModel.locPhimNangCao(status, genre, year);
 };
 
+// xử lý lấy chi tiết phim theo movieId
+const layChiTietPhim = async (movieId) => {
+    if (isNaN(movieId)) {
+        throw new Error("ID phim không hợp lệ");
+    }
+
+    const phim = await movieModel.layChiTietPhim(movieId);
+
+    if (!phim) {
+        throw new Error("Không tìm thấy bộ phim này");
+    }
+
+    return phim;
+};
+
+
 module.exports = {
     layPhimDangChieu,
     layPhimSapChieu,
     timKiemPhimNhanh,
-    locPhim
+    locPhim,
+    layChiTietPhim
 };
