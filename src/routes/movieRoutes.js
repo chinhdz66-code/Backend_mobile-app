@@ -15,4 +15,8 @@ router.get('/search', movieController.searchMovies);
 
 // lọc phim nâng cao theo nhiều tiêu chí: trạng thái, thể loại, năm phát hành
 router.get('/filter', movieController.filterMovies);
+
+// lấy chi tiết phim theo movieId
+router.get('/:id', movieController.getMovieDetail);
+
 module.exports = router;

@@ -44,8 +44,26 @@ const locPhimNangCao = async (status, genre, year) => {
     return rows;
 };
 
+// Hàm lấy chi tiết phim theo movieId, bao gồm cả đánh giá trung bình và tổng số đánh giá
+const layChiTietPhim = async (movieId) => {
+    const query = `
+        SELECT 
+            m.*, 
+            ROUND(IFNULL(AVG(r.rating) * 2, 0), 1) AS avg_rating,
+            COUNT(r.review_id) AS total_reviews
+        FROM Movies m
+        LEFT JOIN Reviews r ON m.movie_id = r.movie_id
+        WHERE m.movie_id = ?
+        GROUP BY m.movie_id
+    `;
+    const [rows] = await pool.query(query, [movieId]);
+    return rows[0];
+};
+
+
 module.exports = {
     layPhimTheoTrangThai,
     timKiemTheoTen,
-    locPhimNangCao
+    locPhimNangCao,
+    layChiTietPhim
 };
